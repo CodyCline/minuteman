@@ -17,8 +17,27 @@ use tui::{
 };
 use sysinfo::{System, SystemExt, DiskExt};
 
+struct Info (String, String);
 
 
+pub const WIPE_METHODS: [&str; 8] = [
+    "British HMG IS5 (1 rewrite and 1 verify)",
+    "Russian GOST P50739-95 (2 rewrites)",
+    "NAVSO P-5239-26 (RLL), (3 rewrites and 1 verify)",
+    "NAVSO P-5239-26 (ALT), (3 rewrites and 1 verify)",
+    "Department of Defense (DoD, USA 5220.22-M) (3 rewrites and 3 verify)",
+    "Department of Defense (DoD, USA 5220.22-M ECE) (7 rewrites)",
+    "Canadian RCMP TSSIT OPS-II (7 rewrites)",
+    "German VSITR (7 rewrites)",
+];
+
+
+enum State {
+    MainSelect,
+    DeletionMethod,
+    DeletionStatus,
+    VerifyStatus,
+}
 /// This struct holds the current state of the app. In particular, it has the `items` field which is a wrapper
 /// around `ListState`. Keeping track of the items state let us render the associated widget with its state
 /// and have access to features such as natural scrolling.
@@ -26,7 +45,7 @@ use sysinfo::{System, SystemExt, DiskExt};
 /// Check the event handling at the bottom to see how to change the state on incoming events.
 /// Check the drawing logic for items on how to specify the highlighting style for selected items.
 struct App<'a> {
-    items: StatefulList<&'a str>,
+    drives: StatefulList<&'a str>,
 }
 
 
@@ -36,7 +55,7 @@ impl<'a> App<'a> {
         
 
         App {
-            items: StatefulList::with_items(drives),
+            drives: StatefulList::with_items(drives),
         }
     }
 
@@ -58,8 +77,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     
     let mut drives = Vec::new();
     for disk in system.get_disks() {
-        println!("{:?}, {:?}", disk.get_name(), disk.get_type());
-
         drives.push(disk.get_name().to_str().unwrap());
     }
     // Create a new app with some exapmle state
@@ -76,7 +93,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             // Iterate through all elements in the `items` app and append some debug text to it.
             let items: Vec<ListItem> = app
-                .items
+                .drives
                 .items
                 .iter()
                 .map(|i| {
@@ -87,7 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             // Create a List from all list items and highlight the currently selected one
             let items = List::new(items)
-                .block(Block::default().borders(Borders::ALL).title("List"))
+                .block(Block::default().borders(Borders::ALL).title("Available Drives"))
                 .highlight_style(
                     Style::default()
                         .bg(Color::Cyan)
@@ -96,7 +113,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .highlight_symbol(">> ");
 
             // We can now render the item list
-            f.render_stateful_widget(items, chunks[0], &mut app.items.state);
+            f.render_stateful_widget(items, chunks[0], &mut app.drives.state);
 
         })?;
 
@@ -109,17 +126,23 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Key::Char('q') => {
                     break;
                 }
-                Key::Left => {
-                    app.items.unselect();
+                Key::Char('x') => {
+                    break;
                 }
+                Key::Esc => {
+                    break;
+                }
+                // Key::Left => {
+                //     app.drives.unselect();
+                // }
                 Key::Down => {
-                    app.items.next();
-                }
-                Key::Right => {
-                    println!("Selected")
+                    app.drives.next();
                 }
                 Key::Up => {
-                    app.items.previous();
+                    app.drives.previous();
+                }
+                Key::Char('e') => {
+                    println!("Selected")
                 }
                 _ => {}
             },
