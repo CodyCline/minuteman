@@ -1,7 +1,7 @@
 
 
 
-use crate::util::{StatefulList};
+use crate::util::{StatefulList, TabsState};
 
 struct SelectedDrive {
     name: String,
@@ -32,16 +32,23 @@ enum State {
 pub struct App<'a> {
     pub title: &'a str,
     pub should_quit: bool,
+    pub is_deleting: bool,
+    pub deletion_progress: f32,
     pub drives: StatefulList<&'a str>,
-    // pub enhanced_graphics: bool,
+    pub deletion_methods: StatefulList<&'a str>,
+    pub state: TabsState<'a>, //Which phase of file deletion is shown
 }
 
 
 impl<'a> App<'a> {
-    pub fn new(drives: Vec<&'a str>, title: &'a str) -> App<'a> {
+    pub fn new(drives: Vec<&'a str>, deletion_methods: Vec<&'a str>, title: &'a str) -> App<'a> {
         App {
             title: title,
+            state: TabsState::new(vec!["Select Drive", "Select Deletion Method", "Confirm", "Deletion In progress", "Verify in progress", "Complete", "Error"]),
             should_quit: false,
+            is_deleting: false,
+            deletion_progress: 0.0,
+            deletion_methods: StatefulList::with_items(deletion_methods),
             drives: StatefulList::with_items(drives),
             // status: State::MainMenu,
             // selected_drive: String::from("None for now"),

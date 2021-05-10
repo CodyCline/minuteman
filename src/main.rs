@@ -74,9 +74,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         // 3. `left` unselects the current item.
         match events.next()? {
             Event::Input(input) => match input {
-                Key::Char(c) => {
-                    app.on_key(c);
-                }
                 Key::Char('q') => {
                     break;
                 }
@@ -94,6 +91,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
                 Key::Char('e') => {
                     println!("Selected drive")
+                }
+                Key::Char(c) => {
+                    app.on_key(c);
                 }
                 _ => {}
             },
