@@ -1,5 +1,8 @@
 // #[cfg(feature = "termion")]
 pub mod event;
+use std::path::Path;
+use sysinfo::{System, SystemExt, DiskExt, DiskType};
+use std::ffi::OsStr;
 use tui::widgets::ListState;
 
 
@@ -82,4 +85,31 @@ impl<T> StatefulList<T> {
         self.state.select(None);
     }
 
+}
+
+
+
+//DiskDisplay is metadata containing information about a specific hard drive 
+pub struct DiskDisplay<'a> {
+    pub name: &'a OsStr,
+    pub disk_type: DiskType,
+    pub file_system: &'a[u8],
+    pub mount_point: &'a Path,
+    pub total_space: u64,
+    pub available_space: u64,    
+}
+
+
+
+impl<'a> DiskDisplay<'a> {
+    pub fn new(disk: &'a sysinfo::Disk) -> DiskDisplay<'a> {
+        DiskDisplay {
+            name: disk.get_name(),
+            disk_type: disk.get_type(),
+            file_system: disk.get_file_system(),
+            mount_point: disk.get_mount_point(),
+            total_space: disk.get_total_space(),
+            available_space: disk.get_available_space(),
+        }
+    }
 }

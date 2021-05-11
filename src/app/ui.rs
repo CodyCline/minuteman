@@ -28,9 +28,10 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .title("Main canvas");
     f.render_widget(block, chunks[0]);
 
-    match app.state.index {
+    match app.status.index {
         0 => draw_drive_selection(f, app, chunks[1]),
-        _ => {}
+        1 => draw_wipe_method_selection(f, app, chunks[1]),
+        _ => {} //Default does nothing 
     }
     
 }
@@ -44,14 +45,14 @@ where
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(67), Constraint::Percentage(33)].as_ref())
         .split(area);
-    //TODO MOVE TO SEPARATE TAB
     // Iterate through all elements in the `items` app and append some debug text to it.
     let items: Vec<ListItem> = app
         .drives
         .items
         .iter()
         .map(|i| {
-            let lines = vec![Spans::from(*i)];
+            let lines = vec![Spans::from(i.name.to_str().unwrap())];
+            println!("{:?}", lines);
             ListItem::new(lines).style(Style::default().fg(Color::Black).bg(Color::Blue))
         })
         .collect();
@@ -75,11 +76,54 @@ where
     let info = Paragraph::new(s.clone())
         .style(Style::default())
         .block(Block::default().borders(Borders::ALL).title("Drive Info"));
-    f.render_widget(info, chunks[1]);
-    // We can now render the item list
+    
+    //Render left side selection and corresponding info 
     f.render_stateful_widget(items, chunks[0], &mut app.drives.state);
+    f.render_widget(info, chunks[1]);
 }
 
 
 
-// fn draw_wipe_method_selection<B>(f: &mut Frame<B>, app: &mut App, area: Rect) {}
+fn draw_wipe_method_selection<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+where
+    B: Backend,
+{
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(67), Constraint::Percentage(33)].as_ref())
+        .split(area);
+    //TODO MOVE TO SEPARATE TAB
+    // Iterate through all elements in the `items` app and append some debug text to it.
+    let items: Vec<ListItem> = app
+        .deletion_methods
+        .items
+        .iter()
+        .map(|i| {
+            let lines = vec![Spans::from(*i)];
+            ListItem::new(lines).style(Style::default().fg(Color::Black).bg(Color::Blue))
+        })
+        .collect();
+
+    // Create a List from all list items and highlight the currently selected one
+    let items = List::new(items)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Deletion Methods"),
+        )
+        .highlight_style(
+            Style::default()
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
+        .highlight_symbol(">> ");
+
+    let s = "Lorem ipsem dolor ipset deler runtime ";
+    s.repeat(4);
+    let info = Paragraph::new(s.clone())
+        .style(Style::default())
+        .block(Block::default().borders(Borders::ALL).title("More Info"));
+    f.render_widget(info, chunks[1]);
+    // We can now render the item list
+    f.render_stateful_widget(items, chunks[0], &mut app.drives.state);
+}

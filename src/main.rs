@@ -2,9 +2,10 @@
 mod util;
 mod app;
 
+use crate::util::DiskDisplay;
 use argh::FromArgs;
 use crate::app::{ui, App};
-use core::time::Duration;
+// use core::time::Duration;
 use crate::util::event::Config;
 use crate::util::{
     event::{Event, Events},
@@ -18,7 +19,7 @@ use sysinfo::{System, SystemExt, DiskExt};
 
 
 //Deletion algorithm options
-pub const WIPE_METHODS: [&str; 8] = [
+const WIPE_METHODS: [&str; 8] = [
     "British HMG IS5 (1 rewrite and 1 verify)",
     "Russian GOST P50739-95 (2 rewrites)",
     "NAVSO P-5239-26 (RLL), (3 rewrites and 1 verify)",
@@ -59,41 +60,35 @@ fn main() -> Result<(), Box<dyn Error>> {
     
     let mut drives = Vec::new();
     for disk in system.get_disks() {
-        drives.push(disk.get_name().to_str().unwrap());
+        DiskDisplay::new(disk);
     }
-    // Create a new app with some exapmle state
-    let mut app = App::new(drives, "Minuteman");
+    // Create a new app with some exaple state
+    let mut app = App::new(drives, WIPE_METHODS.to_vec(), "Minuteman");
     
 
     loop {
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
-        // This is a simple example on how to handle events
-        // 1. This breaks the loop and exits the program on `q` button press.
-        // 2. The `up`/`down` keys change the currently selected item in the App's `items` list.
-        // 3. `left` unselects the current item.
+        // This is the main event handler where user input is handled and dispatched according to the app state 
         match events.next()? {
             Event::Input(input) => match input {
-                Key::Char('q') => {
-                    break;
-                }
-                Key::Char('x') => {
-                    break;
-                }
-                Key::Esc => {
-                    break;
-                }
                 Key::Down => {
                     app.drives.next();
                 }
                 Key::Up => {
                     app.drives.previous();
                 }
-                Key::Char('e') => {
-                    println!("Selected drive")
+                Key::Char('q') => {
+                    app.quit();
                 }
-                Key::Char(c) => {
-                    app.on_key(c);
+                Key::Esc => {
+                    app.quit();
+                }
+                Key::Char('e') => {
+                    app.on_continue();
+                }
+                Key::Char('b') => {
+                    app.on_back();
                 }
                 _ => {}
             },
