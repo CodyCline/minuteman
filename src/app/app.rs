@@ -25,48 +25,58 @@ pub struct App<'a> {
     pub should_quit: bool,
     pub is_deleting: bool,
     pub deletion_progress: f32,
-    pub drives: StatefulList<&'a DiskDisplay<'a>>,
+    pub drives: StatefulList<DiskDisplay<'a>>,
     pub deletion_methods: StatefulList<&'a str>,
+    pub is_confirmed: bool, 
     pub status: TabsState<'a>, //Which phase of file deletion is shown
 }
 
 
 impl<'a> App<'a> {
-    pub fn new(drives: Vec<&'a DiskDisplay<'a>>, deletion_methods: Vec<&'a str>, title: &'a str) -> App<'a> {
+    pub fn new(drives: Vec<DiskDisplay<'a>>, deletion_methods: Vec<&'a str>, title: &'a str) -> App<'a> {
         App {
             title: title,
             status: TabsState::new(vec!["Select Drive", "Select Deletion Method", "Confirm", "Deletion In progress", "Verify in progress", "Complete", "Error"]),
             should_quit: false,
             is_deleting: false,
+            is_confirmed: false,
             deletion_progress: 0.0,
             deletion_methods: StatefulList::with_items(deletion_methods),
             drives: StatefulList::with_items(drives),
         }
     }
 
-    pub fn on_key(&mut self, c: char) {
-        match c {
-            _ => {
-            }
+    pub fn on_up(&mut self) {
+        match self.status.index {
+            0 => { self.drives.previous() }
+            1 => { self.deletion_methods.previous() }
+            _ => {}
         }
     }
 
-    pub fn can_quit(&self) -> bool {
-        if self.status.index != 3 || self.status.index != 4 {
-            false
-        } else {
-            true
+
+    pub fn on_down(&mut self) {
+        match self.status.index {
+            0 => { self.drives.next() }
+            1 => { self.deletion_methods.next() }
+            _ => {}
         }
     }
+
+    
 
     //The key "e" is what continues the state 
     pub fn on_continue(&mut self) {
         match self.status.index {
             0 => {
-                self.status.next()
+                if self.drives.state.selected() != None {
+                    self.status.next();
+                }
             }
             1 => {
-                self.status.next();
+                if self.deletion_methods.state.selected() != None {
+                    self.status.next();
+                }
             }
             2 => {
                 self.status.next();
@@ -81,16 +91,21 @@ impl<'a> App<'a> {
     }
 
     pub fn on_back(&mut self) {
-        if self.status.index != 3 || self.status.index != 4 {
-            self.is_deleting = false;
-            self.status.previous();
+        match self.status.index {
+            0 => {}
+            1 => { self.status.previous() }
+            2 => {
+                self.status.previous();
+                self.is_deleting = true;
+            }
+            3 => { self.status.previous() }
+            4 => { self.status.previous() }
+            _ => {}
         }
     }
 
-    //Quit the app but only allow that if it not in process of wiping drive
+    //TODO Quit the app but only allow that if it not in process of wiping drive
     pub fn quit(&mut self) {
-        // if self.can_quit() {
             self.should_quit = true;
-        // }
     }
 }

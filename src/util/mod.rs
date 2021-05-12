@@ -1,7 +1,8 @@
 // #[cfg(feature = "termion")]
+use std::fmt::{Display, Formatter, Debug, Result};
 pub mod event;
 use std::path::Path;
-use sysinfo::{System, SystemExt, DiskExt, DiskType};
+use sysinfo::{DiskExt, DiskType};
 use std::ffi::OsStr;
 use tui::widgets::ListState;
 
@@ -79,13 +80,13 @@ impl<T> StatefulList<T> {
         self.state.select(Some(i));
     }
 
-    //Add a select method
 
     pub fn unselect(&mut self) {
         self.state.select(None);
     }
 
 }
+
 
 
 
@@ -100,7 +101,6 @@ pub struct DiskDisplay<'a> {
 }
 
 
-
 impl<'a> DiskDisplay<'a> {
     pub fn new(disk: &'a sysinfo::Disk) -> DiskDisplay<'a> {
         DiskDisplay {
@@ -113,3 +113,4 @@ impl<'a> DiskDisplay<'a> {
         }
     }
 }
+

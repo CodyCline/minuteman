@@ -13,7 +13,7 @@ use crate::util::{
 use std::{error::Error, io};
 use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
 use tui::{backend::TermionBackend, Terminal};
-use sysinfo::{System, SystemExt, DiskExt};
+use sysinfo::{System, SystemExt};
 
 
 
@@ -60,7 +60,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     
     let mut drives = Vec::new();
     for disk in system.get_disks() {
-        DiskDisplay::new(disk);
+        let drive = DiskDisplay::new(disk);
+        drives.push(drive);
     }
     // Create a new app with some exaple state
     let mut app = App::new(drives, WIPE_METHODS.to_vec(), "Minuteman");
@@ -73,10 +74,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         match events.next()? {
             Event::Input(input) => match input {
                 Key::Down => {
-                    app.drives.next();
+                    app.on_down();
                 }
                 Key::Up => {
-                    app.drives.previous();
+                    app.on_up();
                 }
                 Key::Char('q') => {
                     app.quit();
