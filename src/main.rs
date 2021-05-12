@@ -79,6 +79,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Key::Up => {
                     app.on_up();
                 }
+                Key::Left => {
+                    app.on_left();
+                }
+                Key::Right => {
+                    app.on_right();
+                }
                 Key::Char('q') => {
                     app.quit();
                 }

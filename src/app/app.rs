@@ -27,7 +27,7 @@ pub struct App<'a> {
     pub deletion_progress: f32,
     pub drives: StatefulList<DiskDisplay<'a>>,
     pub deletion_methods: StatefulList<&'a str>,
-    pub is_confirmed: bool, 
+    pub confirmation: TabsState<'a>, 
     pub status: TabsState<'a>, //Which phase of file deletion is shown
 }
 
@@ -39,7 +39,7 @@ impl<'a> App<'a> {
             status: TabsState::new(vec!["Select Drive", "Select Deletion Method", "Confirm", "Deletion In progress", "Verify in progress", "Complete", "Error"]),
             should_quit: false,
             is_deleting: false,
-            is_confirmed: false,
+            confirmation: TabsState::new(vec!["[ NO ]", "[ YES ]"]),
             deletion_progress: 0.0,
             deletion_methods: StatefulList::with_items(deletion_methods),
             drives: StatefulList::with_items(drives),
@@ -63,6 +63,18 @@ impl<'a> App<'a> {
         }
     }
 
+    pub fn on_left(&mut self) {
+        if self.status.index == 2 {
+            self.confirmation.previous();
+        }
+    }
+
+    pub fn on_right(&mut self) {
+        if self.status.index == 2 {
+            self.confirmation.next();
+        }
+    }
+
     
 
     //The key "e" is what continues the state 
@@ -79,7 +91,12 @@ impl<'a> App<'a> {
                 }
             }
             2 => {
-                self.status.next();
+                if self.confirmation.titles[self.confirmation.index] == String::from("[ YES ]") {
+                    self.is_deleting = true;
+                    self.status.next();
+                } else {
+                    self.status.previous();
+                }
             }
             3 => {
                 self.is_deleting = true;
@@ -106,6 +123,8 @@ impl<'a> App<'a> {
 
     //TODO Quit the app but only allow that if it not in process of wiping drive
     pub fn quit(&mut self) {
+        if !self.is_deleting {
             self.should_quit = true;
+        }
     }
 }
