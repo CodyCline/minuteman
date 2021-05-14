@@ -24,7 +24,7 @@ pub struct App<'a> {
     pub title: &'a str,
     pub should_quit: bool,
     pub is_deleting: bool,
-    pub deletion_progress: f32,
+    pub deletion_progress: f64,
     pub drives: StatefulList<DiskDisplay<'a>>,
     pub deletion_methods: StatefulList<&'a str>,
     pub confirmation: TabsState<'a>, 
@@ -40,7 +40,7 @@ impl<'a> App<'a> {
             should_quit: false,
             is_deleting: false,
             confirmation: TabsState::new(vec!["[ NO ]", "[ YES ]"]),
-            deletion_progress: 0.0,
+            deletion_progress: 0.37,
             deletion_methods: StatefulList::with_items(deletion_methods),
             drives: StatefulList::with_items(drives),
         }

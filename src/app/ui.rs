@@ -4,6 +4,7 @@
 use crate::App;
 use crate::DiskDisplay;
 use tui::layout::Rect;
+use tui::widgets::Gauge;
 use tui::widgets::Tabs;
 use tui::{
     backend::Backend,
@@ -14,19 +15,26 @@ use tui::{
     Frame,
 };
 
+const FG_THEME: Color = Color::Rgb(129, 66, 38);
+const BG_THEME: Color = Color::Rgb(184, 102, 64);
+
 pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(33), Constraint::Percentage(67)].as_ref())
         .split(f.size());
     //TODO main graphic here
-    let block = Block::default().borders(Borders::ALL).title("Main canvas");
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title("Main canvas")
+        .style(Style::default().bg(Color::Black));
     f.render_widget(block, chunks[0]);
 
     match app.status.index {
         0 => draw_drive_selection(f, app, chunks[1]),
         1 => draw_wipe_method_selection(f, app, chunks[1]),
         2 => draw_confirmation(f, app, chunks[1]),
+        3 => draw_deletion_progress(f, app, chunks[1]),
         _ => {}
     }
 }
@@ -55,15 +63,18 @@ where
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(app.status.titles[app.status.index]),
+                .style(Style::default().fg(FG_THEME).bg(Color::Rgb(32, 32, 32)))
+                .title(app.status.titles[app.status.index])
         )
         .highlight_style(
             Style::default()
-                .bg(Color::Yellow)
+                .bg(BG_THEME)
+                .fg(Color::White)
                 .add_modifier(Modifier::BOLD),
         )
         .highlight_symbol(">> ");
     f.render_stateful_widget(items, chunks[0], &mut app.drives.state);
+
 
     let current_index = app.drives.state.selected();
     if current_index != None {
@@ -78,27 +89,28 @@ where
             )),
             Spans::from(Span::styled(
                 format!("Total space: {}", selected_drive.total_space.to_string()),
-                Style::default().bg(Color::Green),
+                Style::default().bg(Color::Green).fg(Color::White),
             )),
             Spans::from(Span::styled(
                 format!("Mount: {}", selected_drive.mount_point.to_str().unwrap()),
-                Style::default().bg(Color::Magenta),
+                Style::default().bg(Color::Magenta).fg(Color::White),
             )),
             Spans::from(Span::styled(
                 format!(
                     "File System: {}",
                     std::str::from_utf8(selected_drive.file_system).unwrap()
                 ),
-                Style::default().bg(Color::Blue),
+                Style::default().bg(Color::Blue).fg(Color::White),
             )),
         ];
         let paragraph = Paragraph::new(text.clone()).style(Style::default()).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Drive Information"),
+                .title("Drive Information")
+                .style(Style::default().fg(FG_THEME).bg(Color::Rgb(32,32,32))),
         );
 
-        //Render left side selection and corresponding info
+        //Render right side selection and corresponding info
         f.render_widget(paragraph, chunks[1]);
     }
 }
@@ -127,7 +139,8 @@ where
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Deletion Methods"),
+                .title("Deletion Methods")
+                .style(Style::default().fg(Color::Yellow)),
         )
         .highlight_style(
             Style::default()
@@ -158,12 +171,14 @@ where
     let selected_drive: &DiskDisplay = &app.drives.items[current_index.unwrap()];
     let warning = format!(
         "Warning! You are about to permanently erase `{}` this action cannot be undone!
-            If you need to ensure a zero chance of data recovery, consider physical destruction",
+        Disk deletion may take some time, leave this window open until the process is completed! 
+        If you need to ensure a zero chance of data recovery, consider physical destruction of the drive afterwards. 
+        Please confirm below that you are absolutely sure you want to proceed!",
         selected_drive.name.to_str().unwrap()
     );
     let info = Paragraph::new(warning.clone())
         .style(Style::default().bg(Color::Red))
-        .block(Block::default().borders(Borders::ALL).title("Details"));
+        .block(Block::default());
 
     let titles = app
         .confirmation
@@ -172,12 +187,56 @@ where
         .map(|t| Spans::from(Span::styled(*t, Style::default())))
         .collect();
     let tabs = Tabs::new(titles)
-        .block(Block::default().borders(Borders::ALL).title(app.title))
+        .block(Block::default().borders(Borders::ALL).title("Confirm"))
         .highlight_style(Style::default().fg(Color::Red))
         .select(app.confirmation.index);
     f.render_widget(info, chunks[0]);
     f.render_widget(tabs, chunks[1]);
 }
 
+fn draw_deletion_progress<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+where
+    B: Backend,
+{
+    let chunks = Layout::default()
+        .constraints(
+            [
+                Constraint::Length(2),
+                Constraint::Length(3),
+                Constraint::Length(1),
+            ]
+            .as_ref(),
+        )
+        .margin(1)
+        .split(area);
+    let block = Block::default().borders(Borders::ALL);
+    f.render_widget(block, area);
 
+    let message = Paragraph::new("Deletion in progress, do not close this window!")
+        .style(Style::default().fg(Color::Yellow));
+    f.render_widget(message, chunks[0]);
 
+    let label = format!("{:.2}%", app.deletion_progress * 100.0);
+    let gauge = Gauge::default()
+        .block(Block::default())
+        .gauge_style(
+            Style::default()
+                .fg(Color::Yellow)
+                .bg(Color::Black)
+                .add_modifier(Modifier::ITALIC | Modifier::BOLD),
+        )
+        .label(label)
+        .ratio(app.deletion_progress);
+    f.render_widget(gauge, chunks[1]);
+}
+
+fn draw_status<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+where
+    B: Backend,
+{
+    //TODO check status show either success page or error
+    // if app.status.errors {
+    // }
+    // else if app.status.success {
+    // }
+}
