@@ -101,6 +101,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             },
             Event::Tick => {
                 if app.status.index == 3 {
+                    //Simulate app progress here
                     app.deletion_progress += 0.008;
                     if app.deletion_progress >= 1.0 {
                         app.deletion_progress = 1.0;

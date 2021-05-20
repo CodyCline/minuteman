@@ -230,7 +230,7 @@ where
             [
                 Constraint::Length(1),
                 Constraint::Length(1),
-                Constraint::Length(1),
+                Constraint::Length(2),
             ]
             .as_ref(),
         )
@@ -250,6 +250,7 @@ where
         .block(Block::default())
         .gauge_style(
             Style::default()
+                .bg(Color::Black)
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::ITALIC | Modifier::BOLD),
         )
