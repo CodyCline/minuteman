@@ -94,13 +94,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Key::Char('e') => {
                     app.on_continue();
                 }
-                Key::Char('b') => {
+                Key::Char('c') => {
                     app.on_back();
                 }
                 _ => {}
             },
             Event::Tick => {
-                continue;
+                if app.status.index == 3 {
+                    app.deletion_progress += 0.008;
+                    if app.deletion_progress >= 1.0 {
+                        app.deletion_progress = 1.0;
+                        app.is_deleting = false;
+                    }
+                }
+                
             }   
         }
         if app.should_quit {

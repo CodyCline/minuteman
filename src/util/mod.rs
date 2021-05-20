@@ -1,10 +1,13 @@
 // #[cfg(feature = "termion")]
-use std::fmt::{Display, Formatter, Debug, Result};
 pub mod event;
+use crate::App;
+use termion::event::Key;
 use std::path::Path;
 use sysinfo::{DiskExt, DiskType};
 use std::ffi::OsStr;
 use tui::widgets::ListState;
+
+
 
 
 
@@ -114,3 +117,13 @@ impl<'a> DiskDisplay<'a> {
     }
 }
 
+
+//Todo, method to handle global events. From here then handle events through blocks.
+pub fn handle_app(key: Key, app: &mut App) {
+    match key {
+        Key::Char('c') => {
+
+        }
+        _ => {}
+    }
+} 

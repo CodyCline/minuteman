@@ -1,6 +1,7 @@
 //Where ui portion of app is handled such as
 //drawing graphical cli text, update, etc.
 
+use tui::widgets::Table;
 use crate::App;
 use crate::DiskDisplay;
 use tui::layout::Rect;
@@ -21,13 +22,13 @@ const BG_THEME: Color = Color::Rgb(184, 102, 64);
 pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(33), Constraint::Percentage(67)].as_ref())
+        .constraints([Constraint::Percentage(40), Constraint::Percentage(60)].as_ref())
         .split(f.size());
     //TODO main graphic here
     let block = Block::default()
         .borders(Borders::ALL)
         .title("Main canvas")
-        .style(Style::default().bg(Color::Black));
+        .style(Style::default().bg(Color::Rgb(32,32,32)));
     f.render_widget(block, chunks[0]);
 
     match app.status.index {
@@ -63,12 +64,12 @@ where
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .style(Style::default().fg(FG_THEME).bg(Color::Rgb(32, 32, 32)))
+                .style(Style::default().fg(Color::Yellow).bg(Color::Rgb(32, 32, 32)))
                 .title(app.status.titles[app.status.index])
         )
         .highlight_style(
             Style::default()
-                .bg(BG_THEME)
+                .bg(Color::Rgb(229, 83, 0))
                 .fg(Color::White)
                 .add_modifier(Modifier::BOLD),
         )
@@ -85,7 +86,7 @@ where
                     "Available space: {}",
                     selected_drive.available_space.to_string()
                 ),
-                Style::default().bg(Color::Yellow),
+                Style::default().bg(Color::Yellow).fg(Color::White),
             )),
             Spans::from(Span::styled(
                 format!("Total space: {}", selected_drive.total_space.to_string()),
@@ -107,12 +108,23 @@ where
             Block::default()
                 .borders(Borders::ALL)
                 .title("Drive Information")
-                .style(Style::default().fg(FG_THEME).bg(Color::Rgb(32,32,32))),
+                .style(Style::default().fg(Color::Yellow).bg(Color::Rgb(32,32,32))),
+        );
+
+        //Render right side selection and corresponding info
+        f.render_widget(paragraph, chunks[1]);
+    } else {
+        let paragraph = Paragraph::new("Select a drive for more information").style(Style::default()).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Drive Information")
+                .style(Style::default().fg(Color::Yellow).bg(Color::Rgb(32,32,32))),
         );
 
         //Render right side selection and corresponding info
         f.render_widget(paragraph, chunks[1]);
     }
+    
 }
 
 fn draw_wipe_method_selection<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
@@ -140,11 +152,12 @@ where
             Block::default()
                 .borders(Borders::ALL)
                 .title("Deletion Methods")
-                .style(Style::default().fg(Color::Yellow)),
+                .style(Style::default().fg(Color::Yellow).bg(Color::Rgb(32,32,32))),
         )
         .highlight_style(
             Style::default()
-                .bg(Color::Yellow)
+                .fg(Color::White)
+                .bg(Color::Rgb(229, 83, 0))
                 .add_modifier(Modifier::BOLD),
         )
         .highlight_symbol(">> ");
@@ -152,7 +165,7 @@ where
     let s = "Lorem ipsem dolor ipset deler runtime ";
     s.repeat(4);
     let info = Paragraph::new(s.clone())
-        .style(Style::default())
+        .style(Style::default().fg(Color::Yellow).bg(Color::Rgb(32,32,32)))
         .block(Block::default().borders(Borders::ALL).title("Details"));
     f.render_widget(info, chunks[1]);
     // We can now render the item list
@@ -164,21 +177,35 @@ where
     B: Backend,
 {
     let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(75), Constraint::Percentage(25)].as_ref())
+        .constraints(
+            [
+                Constraint::Length(4),
+                Constraint::Length(1),
+                Constraint::Length(1),
+            ]
+            .as_ref(),
+        )
+        .margin(2)
         .split(area);
+    let block = Block::default().borders(Borders::ALL).style(Style::default().fg(Color::Yellow).bg(Color::Rgb(32,32,32)));
+    f.render_widget(block, area);
+
+
     let current_index = app.drives.state.selected();
     let selected_drive: &DiskDisplay = &app.drives.items[current_index.unwrap()];
-    let warning = format!(
-        "Warning! You are about to permanently erase `{}` this action cannot be undone!
+    let warning_message = format!(
+        "Warning! You are about to permanently erase \"{}\" this action cannot be undone!
         Disk deletion may take some time, leave this window open until the process is completed! 
         If you need to ensure a zero chance of data recovery, consider physical destruction of the drive afterwards. 
-        Please confirm below that you are absolutely sure you want to proceed!",
+        Proceed with caution",
         selected_drive.name.to_str().unwrap()
     );
-    let info = Paragraph::new(warning.clone())
-        .style(Style::default().bg(Color::Red))
-        .block(Block::default());
+
+    let prompt = Paragraph::new("Are you sure you want yo delete this drive?");
+
+    
+    let info = Paragraph::new(warning_message.clone())
+        .style(Style::default().fg(Color::Red).bg(Color::Rgb(32,32,32)));
 
     let titles = app
         .confirmation
@@ -187,11 +214,11 @@ where
         .map(|t| Spans::from(Span::styled(*t, Style::default())))
         .collect();
     let tabs = Tabs::new(titles)
-        .block(Block::default().borders(Borders::ALL).title("Confirm"))
         .highlight_style(Style::default().fg(Color::Red))
         .select(app.confirmation.index);
     f.render_widget(info, chunks[0]);
-    f.render_widget(tabs, chunks[1]);
+    f.render_widget(prompt, chunks[1]);
+    f.render_widget(tabs, chunks[2]);
 }
 
 fn draw_deletion_progress<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
@@ -201,28 +228,29 @@ where
     let chunks = Layout::default()
         .constraints(
             [
-                Constraint::Length(2),
-                Constraint::Length(3),
+                Constraint::Length(1),
+                Constraint::Length(1),
                 Constraint::Length(1),
             ]
             .as_ref(),
         )
         .margin(1)
         .split(area);
-    let block = Block::default().borders(Borders::ALL);
+    let block = Block::default().borders(Borders::ALL).style(Style::default().fg(Color::Yellow).bg(Color::Rgb(32,32,32)));
     f.render_widget(block, area);
 
     let message = Paragraph::new("Deletion in progress, do not close this window!")
         .style(Style::default().fg(Color::Yellow));
     f.render_widget(message, chunks[0]);
 
-    let label = format!("{:.2}%", app.deletion_progress * 100.0);
+    
+
+    let label = format!("[{:.2}%, round 1 of 7, pass 1 of 3]", app.deletion_progress * 100.0);
     let gauge = Gauge::default()
         .block(Block::default())
         .gauge_style(
             Style::default()
                 .fg(Color::Yellow)
-                .bg(Color::Black)
                 .add_modifier(Modifier::ITALIC | Modifier::BOLD),
         )
         .label(label)

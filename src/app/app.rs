@@ -2,16 +2,6 @@ use crate::util::DiskDisplay;
 use crate::util::{StatefulList, TabsState};
 
 
-enum State {
-    MainMenu,
-    DriveSelection,
-    DeletionMethod,
-    DeletionStatus,
-    VerifyStatus,
-    Success,
-    Error,
-}
-
 //Where state is handeled 
 
 /// This struct holds the current state of the app. In particular, it has the `items` field which is a wrapper
@@ -27,8 +17,8 @@ pub struct App<'a> {
     pub deletion_progress: f64,
     pub drives: StatefulList<DiskDisplay<'a>>,
     pub deletion_methods: StatefulList<&'a str>,
-    pub confirmation: TabsState<'a>, 
-    pub status: TabsState<'a>, //Which phase of file deletion is shown
+    pub confirmation: TabsState<'a>, //yes no
+    pub status: TabsState<'a>, //Which phase of cli state is shown
 }
 
 
@@ -39,8 +29,8 @@ impl<'a> App<'a> {
             status: TabsState::new(vec!["Select Drive", "Select Deletion Method", "Confirm", "Deletion In progress", "Verify in progress", "Complete", "Error"]),
             should_quit: false,
             is_deleting: false,
-            confirmation: TabsState::new(vec!["[ NO ]", "[ YES ]"]),
-            deletion_progress: 0.37,
+            confirmation: TabsState::new(vec!["<CANCEL>", "<DELETE>"]),
+            deletion_progress: 0.00,
             deletion_methods: StatefulList::with_items(deletion_methods),
             drives: StatefulList::with_items(drives),
         }
@@ -91,7 +81,7 @@ impl<'a> App<'a> {
                 }
             }
             2 => {
-                if self.confirmation.titles[self.confirmation.index] == String::from("[ YES ]") {
+                if self.confirmation.titles[self.confirmation.index] == String::from("<DELETE>") {
                     self.is_deleting = true;
                     self.status.next();
                 } else {
@@ -104,7 +94,6 @@ impl<'a> App<'a> {
             _ => {}
         }
 
-
     }
 
     pub fn on_back(&mut self) {
@@ -115,7 +104,11 @@ impl<'a> App<'a> {
                 self.status.previous();
                 self.is_deleting = true;
             }
-            3 => { self.status.previous() }
+            3 => {
+                if !self.is_deleting {
+                    self.status.previous();
+                }
+            }
             4 => { self.status.previous() }
             _ => {}
         }
