@@ -1,7 +1,5 @@
-use crate::util::DiskDisplay;
 use crate::util::{StatefulList, TabsState};
-
-
+use crate::disk::Disk;
 //Where state is handeled 
 
 /// This struct holds the current state of the app. In particular, it has the `items` field which is a wrapper
@@ -11,11 +9,12 @@ use crate::util::{StatefulList, TabsState};
 /// Check the event handling at the bottom to see how to change the state on incoming events.
 /// Check the drawing logic for items on how to specify the highlighting style for selected items.
 pub struct App<'a> {
+    pub debug_mode: bool,
     pub title: &'a str,
     pub should_quit: bool,
     pub is_deleting: bool,
     pub deletion_progress: f64,
-    pub drives: StatefulList<DiskDisplay<'a>>,
+    pub drives: StatefulList<Disk>,
     pub deletion_methods: StatefulList<&'a str>,
     pub confirmation: TabsState<'a>, //yes no
     pub status: TabsState<'a>, //Which phase of cli state is shown
@@ -23,8 +22,9 @@ pub struct App<'a> {
 
 
 impl<'a> App<'a> {
-    pub fn new(drives: Vec<DiskDisplay<'a>>, deletion_methods: Vec<&'a str>, title: &'a str) -> App<'a> {
+    pub fn new(drives: Vec<Disk>, deletion_methods: Vec<&'a str>, title: &'a str) -> App<'a> {
         App {
+            debug_mode: true, //Prevent anything destructive from happening
             title: title,
             status: TabsState::new(vec!["Select Drive", "Select Deletion Method", "Confirm", "Deletion In progress", "Verify in progress", "Complete", "Error"]),
             should_quit: false,

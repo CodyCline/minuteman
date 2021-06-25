@@ -1,8 +1,12 @@
 #[allow(dead_code)]
 mod util;
 mod app;
+mod disk;
 
-use crate::util::DiskDisplay;
+
+
+use std::path::Path;
+use crate::disk::{Disk, find_external_disks, calculate_disk_usage};
 use argh::FromArgs;
 use crate::app::{ui, App};
 // use core::time::Duration;
@@ -13,7 +17,7 @@ use crate::util::{
 use std::{error::Error, io};
 use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
 use tui::{backend::TermionBackend, Terminal};
-use sysinfo::{System, SystemExt};
+
 
 
 
@@ -39,9 +43,16 @@ struct Cli {
 }
 
 
-
+ 
 fn main() -> Result<(), Box<dyn Error>> {
     let cli: Cli = argh::from_env();
+    let dsks = find_external_disks();
+    for dsk in dsks.iter() {
+        println!("Disks");
+        println!("{:?}", dsk);
+    }
+
+    
 
     let events = Events::with_config(Config {
         // tick_rate: Duration::from_millis(cli.tick_rate),
@@ -55,18 +66,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut system = System::new_all();
-    system.refresh_all();
-    
-    let mut drives = Vec::new();
-    for disk in system.get_disks() {
-        let drive = DiskDisplay::new(disk);
-        drives.push(drive);
-    }
-    // Create a new app with some exaple state
-    let mut app = App::new(drives, WIPE_METHODS.to_vec(), "Minuteman");
+    //Instaniate disk get method here returns a vector of drives available to use
+    // let disks = disk::get_all_drives(); //Not Implementeed
     
 
+
+    // Create a new app
+    let mut app = App::new(dsks.unwrap(), WIPE_METHODS.to_vec(), "Minuteman");
+    
     loop {
         terminal.draw(|f| ui::draw(f, &mut app))?;
 

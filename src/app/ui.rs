@@ -1,9 +1,8 @@
 //Where ui portion of app is handled such as
 //drawing graphical cli text, update, etc.
 
-use tui::widgets::Table;
 use crate::App;
-use crate::DiskDisplay;
+use crate::disk::Disk;
 use tui::layout::Rect;
 use tui::widgets::Gauge;
 use tui::widgets::Tabs;
@@ -79,12 +78,12 @@ where
 
     let current_index = app.drives.state.selected();
     if current_index != None {
-        let selected_drive: &DiskDisplay = &app.drives.items[current_index.unwrap()];
+        let selected_drive: &Disk = &app.drives.items[current_index.unwrap()];
         let text = vec![
             Spans::from(Span::styled(
                 format!(
-                    "Available space: {}",
-                    selected_drive.available_space.to_string()
+                    "Free space: {}",
+                    selected_drive.free_space.to_string()
                 ),
                 Style::default().bg(Color::Yellow).fg(Color::White),
             )),
@@ -93,15 +92,23 @@ where
                 Style::default().bg(Color::Green).fg(Color::White),
             )),
             Spans::from(Span::styled(
-                format!("Mount: {}", selected_drive.mount_point.to_str().unwrap()),
+                format!("Mount: {}", selected_drive.mount_point),
                 Style::default().bg(Color::Magenta).fg(Color::White),
             )),
             Spans::from(Span::styled(
                 format!(
                     "File System: {}",
-                    std::str::from_utf8(selected_drive.file_system).unwrap()
+                    selected_drive.file_system
                 ),
                 Style::default().bg(Color::Blue).fg(Color::White),
+            )),
+            Spans::from(Span::styled(
+                format!("Total space: {}", selected_drive.total_space.to_string()),
+                Style::default().bg(Color::Green).fg(Color::White),
+            )),
+            Spans::from(Span::styled(
+                format!("Type: {}", selected_drive.disk_type),
+                Style::default().bg(Color::Green).fg(Color::White),
             )),
         ];
         let paragraph = Paragraph::new(text.clone()).style(Style::default()).block(
@@ -192,7 +199,7 @@ where
 
 
     let current_index = app.drives.state.selected();
-    let selected_drive: &DiskDisplay = &app.drives.items[current_index.unwrap()];
+    let selected_drive: &Disk = &app.drives.items[current_index.unwrap()];
     let warning_message = format!(
         "Warning! You are about to permanently erase \"{}\" this action cannot be undone!
         Disk deletion may take some time, leave this window open until the process is completed! 
