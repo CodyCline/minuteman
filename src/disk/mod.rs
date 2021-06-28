@@ -9,7 +9,6 @@ use linux as os;
 
 pub use os::find_external_disks;
 
-pub use os::calculate_disk_usage;
 
 
 pub trait DriveAccessor {
@@ -20,8 +19,13 @@ pub trait DriveAccessor {
     fn flush(&mut self) -> Result<()>;
 }
 
-
-
+#[derive(Clone, Debug)]
+pub struct Partition {
+    pub name: String,
+    pub mount_point: PathBuf,
+    pub file_system: String,
+    pub read_only: bool,
+}
 
 
 /// `Disk` represents a single Disk/drive which contains metadata about it
@@ -32,8 +36,7 @@ pub struct Disk {
     pub model: String,
     pub serial_number: String,
     pub disk_type: DiskType,
-    pub file_system: String,
-    pub mount_point: String,
+    pub partitions: Vec<Partition>,
     pub version: String, //Technically a float but reads as string
     pub total_space: u64,
     pub used_space: u64,
@@ -48,14 +51,10 @@ pub struct Disk {
 pub enum DiskType {
     HDD,
     SSD,
-    Fixed,
-    File,
     Partition,
     Removable,
-    CD,
     RAID,
-    Unknown(isize),
-    Other,
+    Unknown,
 }
 
 impl std::fmt::Display for DiskType {

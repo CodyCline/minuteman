@@ -5,8 +5,7 @@ mod disk;
 
 
 
-use std::path::Path;
-use crate::disk::{Disk, find_external_disks, calculate_disk_usage};
+use crate::disk::{ find_external_disks };
 use argh::FromArgs;
 use crate::app::{ui, App};
 // use core::time::Duration;
@@ -46,13 +45,12 @@ struct Cli {
  
 fn main() -> Result<(), Box<dyn Error>> {
     let cli: Cli = argh::from_env();
-    let dsks = find_external_disks();
-    for dsk in dsks.iter() {
-        println!("Disks");
-        println!("{:?}", dsk);
-    }
 
-    
+    //Instaniate disk get method here returns a vector of drives available to use
+    let disks = find_external_disks();
+    for disk in disks.iter() {
+        println!("{:?}", disk);
+    }
 
     let events = Events::with_config(Config {
         // tick_rate: Duration::from_millis(cli.tick_rate),
@@ -66,13 +64,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    //Instaniate disk get method here returns a vector of drives available to use
-    // let disks = disk::get_all_drives(); //Not Implementeed
     
 
 
     // Create a new app
-    let mut app = App::new(dsks.unwrap(), WIPE_METHODS.to_vec(), "Minuteman");
+    let mut app = App::new(disks.unwrap(), WIPE_METHODS.to_vec(), "Minuteman");
     
     loop {
         terminal.draw(|f| ui::draw(f, &mut app))?;
@@ -110,10 +106,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 if app.status.index == 3 {
                     //Simulate app progress here
                     app.deletion_progress += 0.008;
-                    if app.deletion_progress >= 1.0 {
-                        app.deletion_progress = 1.0;
-                        app.is_deleting = false;
-                    }
+                    
                 }
                 
             }   

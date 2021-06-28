@@ -91,17 +91,17 @@ where
                 format!("Total space: {}", selected_drive.total_space.to_string()),
                 Style::default().bg(Color::Green).fg(Color::White),
             )),
-            Spans::from(Span::styled(
-                format!("Mount: {}", selected_drive.mount_point),
-                Style::default().bg(Color::Magenta).fg(Color::White),
-            )),
-            Spans::from(Span::styled(
-                format!(
-                    "File System: {}",
-                    selected_drive.file_system
-                ),
-                Style::default().bg(Color::Blue).fg(Color::White),
-            )),
+            // Spans::from(Span::styled(
+            //     format!("Mount: {}", selected_drive.mount_point),
+            //     Style::default().bg(Color::Magenta).fg(Color::White),
+            // )),
+            // Spans::from(Span::styled(
+            //     format!(
+            //         "File System: {}",
+            //         selected_drive.file_system
+            //     ),
+            //     Style::default().bg(Color::Blue).fg(Color::White),
+            // )),
             Spans::from(Span::styled(
                 format!("Total space: {}", selected_drive.total_space.to_string()),
                 Style::default().bg(Color::Green).fg(Color::White),

@@ -1,4 +1,6 @@
 //Get all disk attributes like read_only, serial, model, etc
+use std::os::unix::prelude::OsStrExt;
+use std::ffi::OsStr;
 use nix::sys::statvfs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -6,24 +8,27 @@ use std::path::Path;
 use std::path::PathBuf;
 use anyhow::Result;
 
-use crate::disk::{Disk, DiskType};
+use crate::disk::{Disk, Partition, DiskType};
 
-///Retrieves the `mount_point` and `file_system` of a disk if it finds a matching pathname 
-/// from given argument in the `"/proc/mounts"` file
-pub fn disk_info<P: AsRef<Path>>(path: P) -> Result<Option<(String, String)>> {
-    let s = path.as_ref().to_str().unwrap();
-    let file = File::open("/proc/mount")?;
+///Retrieves all partitions by matching if `name` starts in the /proc/mounts file 
+/// then returns them in a vector of `Partition`
+pub fn read_partitions(name : &str) -> std::io::Result<Vec<Partition>> {
+    let mut partitions: Vec<Partition> = Vec::new();
+    let file = File::open("/proc/mounts")?;
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let l = line?;
         let parts: Vec<&str> = l.split_whitespace().collect();
-        if parts[0] == s {
-            return Ok(Some(
-                (parts[1].to_string(), parts[2].to_string())
-            ));
+        if parts[0].starts_with(name) { //e.g.g  
+            partitions.push(Partition {
+                name: parts[0].to_string(),
+                mount_point: Path::new(parts[1]).to_path_buf(),
+                file_system: parts[2].to_string(),
+                read_only: false,
+            })
         }
     }
-    Ok(Some((String::from("Unknown"), String::from("Unknown"))))
+    Ok(partitions)
 }
 
 ///Computes the disk size, total space and used space
@@ -68,7 +73,39 @@ fn disk_attributes(path: &Path) -> Option<PathBuf> {
 
 
 
-pub fn resolve_disk_type() {}
+///Resolve disk type takes in the block path of a device, then 
+/// deduces its possible type by reading file properties such as "rotational" or "removable", then
+/// if its rotational
+pub fn resolve_disk_type(block_path: PathBuf) -> std::io::Result<DiskType> {
+    let read = |name| -> std::io::Result<String> {
+        let path = block_path.join(name);
+        let contents = std::fs::read_to_string(path)?;
+        Ok(contents.trim().into())
+    };
+    //If the disk is removable return that type 
+    let is_removable = read("removable")?;
+    if is_removable == String::from("1") {
+       Ok(DiskType::Removable) //CD, Flash, Floppy, etc.
+    } else {
+        
+        //Todo check for partition type
+        
+        //Check if its rotational, if true very likely that its a HDD
+        let disk_queue = block_path.join("queue");
+
+        if disk_queue.exists() {
+            let is_rotational = read("queue/rotational")?; 
+            if is_rotational == String::from("1") {
+                return Ok(DiskType::HDD);
+            } else {
+                return Ok(DiskType::SSD);
+            }
+        } else {
+            //Unknown disk types
+            return Ok(DiskType::Unknown);
+        }
+    }
+} 
 
 
 //https://www.kernel.org/doc/html/latest/_sources/admin-guide/sysfs-rules.rst.txt
@@ -83,7 +120,7 @@ pub fn find_external_disks() -> std::io::Result<Vec<Disk>> {
             continue;
         }
 
-        println!("{:?}", path);
+
 
         // This will give a very long path such as:
         // /sys/devices/pci0000:00/0000:00:01.2/0000:02:00.0/
@@ -91,8 +128,7 @@ pub fn find_external_disks() -> std::io::Result<Vec<Disk>> {
         //     host7/target7:0:0/7:0:0:0
         let device_path = device_path.canonicalize()?;
         
-        println!("{:?}", device_path);
-
+  
         // Skip non-USB devices
         if !is_external_device(&device_path) {
             continue;
@@ -102,10 +138,11 @@ pub fn find_external_disks() -> std::io::Result<Vec<Disk>> {
 
         let disk_name = Path::new("/dev").join(entry.file_name());
 
-        //Get
+        let _type = resolve_disk_type(path);
+
         let usage = calculate_disk_usage(&disk_name);
         let (total_space, used, free) = usage.unwrap();
-
+        let partitions = read_partitions(&disk_name.to_str().unwrap());
 
         if let Some(info_path) = disk_attributes(&device_path) {
             //Read is an closure that displays specific disk attribute(s)
@@ -115,18 +152,15 @@ pub fn find_external_disks() -> std::io::Result<Vec<Disk>> {
                 Ok(contents.trim().into())
             };
 
-            
-
             disks.push(Disk {
                 name: disk_name,
                 model: read("product")?,
                 serial_number: read("serial")?,
-                disk_type: DiskType::Unknown(-1),
+                disk_type: _type.unwrap_or(DiskType::Unknown), 
                 version: read("version")?,
-                file_system: String::from("NOT IMPLEMENTED"), //ext4
-                mount_point: String::from("NOT IMPLEMENTED"), //media/disk
                 total_space: total_space,
                 used_space: used,
+                partitions: partitions.unwrap(),
                 free_space: free,
             });
         }
