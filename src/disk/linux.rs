@@ -73,9 +73,9 @@ fn disk_attributes(path: &Path) -> Option<PathBuf> {
 
 
 
-///Resolve disk type takes in the block path of a device, then 
-/// deduces its possible type by reading file properties such as "rotational" or "removable", then
-/// if its rotational
+///Resolve disk type takes in the block path of a device, and 
+/// deduces its possible type by reading file properties such as "rotational" or "removable", which
+/// returns a `DiskType`
 pub fn resolve_disk_type(block_path: PathBuf) -> std::io::Result<DiskType> {
     let read = |name| -> std::io::Result<String> {
         let path = block_path.join(name);
@@ -136,16 +136,16 @@ pub fn find_external_disks() -> std::io::Result<Vec<Disk>> {
 
         //Once we get our path and are certain its an external drive then get attributes like name, serial, etc.
 
-        let disk_name = Path::new("/dev").join(entry.file_name());
+        let name = Path::new("/dev").join(entry.file_name());
 
         let _type = resolve_disk_type(path);
 
-        let usage = calculate_disk_usage(&disk_name);
+        let usage = calculate_disk_usage(&name);
         let (total_space, used, free) = usage.unwrap();
-        let partitions = read_partitions(&disk_name.to_str().unwrap());
+        let partitions = read_partitions(&name.to_str().unwrap());
 
         if let Some(info_path) = disk_attributes(&device_path) {
-            //Read is an closure that displays specific disk attribute(s)
+            //Read is a closure that displays specific disk attribute by reading a file value if it exists
             let read = |name| -> std::io::Result<String> {
                 let path = info_path.join(name);
                 let contents = std::fs::read_to_string(path)?;
@@ -153,7 +153,7 @@ pub fn find_external_disks() -> std::io::Result<Vec<Disk>> {
             };
 
             disks.push(Disk {
-                name: disk_name,
+                name: name,
                 model: read("product")?,
                 serial_number: read("serial")?,
                 disk_type: _type.unwrap_or(DiskType::Unknown), 
