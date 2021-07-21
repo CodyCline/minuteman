@@ -1,14 +1,17 @@
 #[allow(dead_code)]
-mod util;
-mod app;
 mod disk;
+mod app;
+mod ui;
+mod util;
+mod clone;
 
-
+use crate::clone::create_disk_backup;
 
 use crate::disk::{ find_external_disks };
 use argh::FromArgs;
-use crate::app::{ui, App};
-// use core::time::Duration;
+use crate::app::{App};
+use crate::ui::Ui;
+
 use crate::util::event::Config;
 use crate::util::{
     event::{Event, Events},
@@ -46,12 +49,21 @@ struct Cli {
 fn main() -> Result<(), Box<dyn Error>> {
     let cli: Cli = argh::from_env();
 
+    
     //Instaniate disk get method here returns a vector of drives available to use
     let disks = find_external_disks();
-    for disk in disks.iter() {
-        println!("{:?}", disk);
-    }
+    // for disk in disks.iter() {
+    //     println!("DISK !{:?}", disk);
+    // }
 
+    let first_disk = &disks.unwrap()[0];
+    let size = &first_disk.free_space;
+    let name = &first_disk.name;
+
+    let msg = create_disk_backup(name, size);
+    
+    // let clone = create_disk_backup(std::path::PathBuf::from("/dev/sda1"));
+    // println!("{:?}", clone);
     let events = Events::with_config(Config {
         // tick_rate: Duration::from_millis(cli.tick_rate),
         ..Config::default()
@@ -68,52 +80,55 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 
     // Create a new app
-    let mut app = App::new(disks.unwrap(), WIPE_METHODS.to_vec(), "Minuteman");
+    // let mut app = App::new(disks.unwrap(), WIPE_METHODS.to_vec(), "Minuteman");
     
-    loop {
-        terminal.draw(|f| ui::draw(f, &mut app))?;
+    // loop {
+    //     terminal.draw(|f| Ui::draw(f, &mut app))?;
 
-        // This is the main event handler where user input is handled and dispatched according to the app state 
-        match events.next()? {
-            Event::Input(input) => match input {
-                Key::Down => {
-                    app.on_down();
-                }
-                Key::Up => {
-                    app.on_up();
-                }
-                Key::Left => {
-                    app.on_left();
-                }
-                Key::Right => {
-                    app.on_right();
-                }
-                Key::Char('q') => {
-                    app.quit();
-                }
-                Key::Esc => {
-                    app.quit();
-                }
-                Key::Char('e') => {
-                    app.on_continue();
-                }
-                Key::Char('c') => {
-                    app.on_back();
-                }
-                _ => {}
-            },
-            Event::Tick => {
-                if app.status.index == 3 {
-                    //Simulate app progress here
-                    app.deletion_progress += 0.008;
+    //     // This is the main event handler where user input is handled and dispatched according to the app state 
+    //     match events.next()? {
+    //         Event::Input(input) => match input {
+    //             Key::Down => {
+    //                 app.on_down();
+    //             }
+    //             Key::Up => {
+    //                 app.on_up();
+    //             }
+    //             Key::Left => {
+    //                 app.on_left();
+    //             }
+    //             Key::Right => {
+    //                 app.on_right();
+    //             }
+    //             Key::Char('q') => {
+    //                 app.quit();
+    //             }
+    //             Key::Esc => {
+    //                 app.quit();
+    //             }
+    //             Key::Char('e') => {
+    //                 app.on_continue();
+    //             }
+    //             Key::Char('c') => {
+    //                 app.on_back();
+    //             }
+    //             _ => {}
+    //         },
+    //         Event::Tick => {
+    //             if app.status.index == 3 {
+    //                 //Simulate app progress here
+    //                 app.deletion_progress += 0.008;
                     
-                }
+    //             }
                 
-            }   
-        }
-        if app.should_quit {
-            break;
-        }
-    }
+    //         }   
+    //     }
+    //     if app.should_quit {
+    //         break;
+    //     }
+    // }
     Ok(())
 }
+
+
+

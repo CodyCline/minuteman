@@ -9,3 +9,9 @@ This application is organized into separate modules:
 *UI*: UI draws the visual representation of the app, text, graphics, colors.
 *Disk*: Contains methods to fetch system information such as drive type, mount point, model, etc.
 *Core*: Where the magic lives. Will contain the various algorithms used in disk destruction or disk cloning.
+
+
+# The three modes
+Clone external disk into an iso file
+Burn an image to external disk (partition perhaps)
+Destroy an external disk 

@@ -2,6 +2,8 @@ use crate::util::{StatefulList, TabsState};
 use crate::disk::Disk;
 //Where state is handeled 
 
+
+
 /// This struct holds the current state of the app. In particular, it has the `items` field which is a wrapper
 /// around `ListState`. Keeping track of the items state let us render the associated widget with its state
 /// and have access to features such as natural scrolling.
@@ -89,6 +91,7 @@ impl<'a> App<'a> {
                 }
             }
             3 => {
+                //This is probably where you match up the task and what to do e.g. delete or clone
                 self.is_deleting = true;
             }
             _ => {}

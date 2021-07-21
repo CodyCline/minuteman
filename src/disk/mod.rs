@@ -24,6 +24,8 @@ pub struct Partition {
     pub name: String,
     pub mount_point: PathBuf,
     pub file_system: String,
+    pub free: u64,
+    pub total: u64,
     pub read_only: bool,
 }
 
@@ -39,8 +41,8 @@ pub struct Disk {
     pub partitions: Vec<Partition>,
     pub version: String, //Technically a float but reads as string
     pub total_space: u64,
-    pub used_space: u64,
     pub free_space: u64,
+    pub used_space: u64,
 }
 
 

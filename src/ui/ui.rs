@@ -80,16 +80,17 @@ where
     if current_index != None {
         let selected_drive: &Disk = &app.drives.items[current_index.unwrap()];
         let text = vec![
+            
+            Spans::from(Span::styled(
+                format!("Total space: {}", selected_drive.total_space.to_string()),
+                Style::default().bg(Color::Green).fg(Color::White),
+            )),
             Spans::from(Span::styled(
                 format!(
                     "Free space: {}",
                     selected_drive.free_space.to_string()
                 ),
                 Style::default().bg(Color::Yellow).fg(Color::White),
-            )),
-            Spans::from(Span::styled(
-                format!("Total space: {}", selected_drive.total_space.to_string()),
-                Style::default().bg(Color::Green).fg(Color::White),
             )),
             // Spans::from(Span::styled(
             //     format!("Mount: {}", selected_drive.mount_point),
@@ -103,7 +104,7 @@ where
             //     Style::default().bg(Color::Blue).fg(Color::White),
             // )),
             Spans::from(Span::styled(
-                format!("Total space: {}", selected_drive.total_space.to_string()),
+                format!("Used space: {}", selected_drive.used_space.to_string()),
                 Style::default().bg(Color::Green).fg(Color::White),
             )),
             Spans::from(Span::styled(
